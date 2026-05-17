@@ -1,0 +1,37 @@
+lib/store.ts
+  1e31434caf664106 4
+README.md
+  1e31434caf664106 3,17,21,30,32-34,36,42,44,46-49,53-70,78
+components/DataManager.tsx
+  1e31434caf664106 1-115
+app/settings/page.tsx
+  1e31434caf664106 2,5-6,23-24,26-28,56-57,59-61,65
+app/report/page.tsx
+  1e31434caf664106 3,13,20
+lib/data.ts
+  1e31434caf664106 1-151
+app/add/page.tsx
+  1e31434caf664106 34
+app/report/[year]/[month]/page.tsx
+  1e31434caf664106 4
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.23",
+  "base_commit_sha": "e24dc2387e6a4640a64001694927c3e7e9e1a536",
+  "prompts": {
+    "1e31434caf664106": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "63988280-bc5c-4f41-bdbe-02c7cf1105ae",
+        "model": "claude-4-sonnet"
+      },
+      "human_author": "Lakshmikanth <lakshmikanth.d@gdn-commerce.com>",
+      "messages": [],
+      "total_additions": 362,
+      "total_deletions": 338,
+      "accepted_lines": 324,
+      "overriden_lines": 0
+    }
+  }
+}
