@@ -1,6 +1,6 @@
 'use client'
 import { useEffect, useState } from 'react'
-import { getManifest } from '@/lib/github'
+import { getAvailableMonths } from '@/lib/data'
 import { monthLabel, getCurrentMonth } from '@/lib/utils'
 import Link from 'next/link'
 import { Calendar, ChevronRight } from 'lucide-react'
@@ -10,14 +10,14 @@ export default function ReportIndex() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    getManifest().then(m => {
+    getAvailableMonths().then(m => {
       const all = m.length > 0 ? m : [getCurrentMonth()]
       setMonths(all.sort().reverse())
       setLoading(false)
     })
   }, [])
 
-  const years = [...new Set(months.map(m => m.split('-')[0]))].sort().reverse()
+  const years = Array.from(new Set(months.map(m => m.split('-')[0]))).sort().reverse()
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-5">

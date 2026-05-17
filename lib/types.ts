@@ -84,11 +84,5 @@ export interface MonthData {
   budgets: Record<string, number>
 }
 
-export interface GitHubConfig {
-  token: string
-  owner: string
-  repo: string
-  branch: string
-}
 
 export type TransactionType = 'expense' | 'income' | 'investment' | 'saving' | 'loan' | 'subscription'

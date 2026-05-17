@@ -31,7 +31,7 @@ export default function AddPage() {
 
     const ok = await saveMonth(data)
     if (ok) toast(`${type} added successfully!`, 'success')
-    else toast('Saved locally (GitHub not synced)', 'error')
+    else toast('Failed to save data', 'error')
   }
 
   return (

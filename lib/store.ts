@@ -1,7 +1,7 @@
 import { create } from 'zustand'
 import { MonthData } from './types'
 import { getCurrentMonth, emptyMonthData } from './utils'
-import { getMonthData, saveMonthData } from './github'
+import { getMonthData, saveMonthData } from './data'
 
 interface Store {
   currentMonth: string

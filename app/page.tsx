@@ -3,7 +3,6 @@ import { useEffect, useState } from 'react'
 import { useStore } from '@/lib/store'
 import { formatINR, calcTotals, monthLabel, prevMonth, nextMonth, getCurrentMonth, getSubscriptionsRenewingSoon } from '@/lib/utils'
 import { SummaryCard } from '@/components/cards/SummaryCard'
-import { isConfigured } from '@/lib/github'
 import {
   TrendingUp, TrendingDown, PiggyBank, DollarSign, ChevronLeft, ChevronRight,
   AlertTriangle, Bell, Plus, ArrowUpRight, ArrowDownRight
@@ -52,8 +51,6 @@ export default function Dashboard() {
     .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
     .slice(0, 10)
 
-  const configured = isConfigured()
-
   return (
     <div className="max-w-4xl mx-auto px-4 py-5">
       {/* Header */}
@@ -77,17 +74,6 @@ export default function Dashboard() {
           <Plus size={15} /> Add
         </Link>
       </div>
-
-      {!configured && (
-        <div className="card p-4 mb-4 border-yellow-500/20 bg-yellow-500/5 flex items-center gap-3">
-          <AlertTriangle size={18} className="text-yellow-400 shrink-0" />
-          <div className="text-sm">
-            <span className="text-yellow-300 font-medium">GitHub not connected.</span>
-            <span className="text-gray-400"> Data won&apos;t be saved. </span>
-            <Link href="/settings" className="text-blue-400 underline">Configure in Settings →</Link>
-          </div>
-        </div>
-      )}
 
       {/* Alerts */}
       {overBudgetCategories.length > 0 && (
