@@ -1,7 +1,7 @@
 'use client'
 import { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
-import { getMonthData } from '@/lib/github'
+import { getMonthData } from '@/lib/data'
 import { MonthData } from '@/lib/types'
 import { emptyMonthData, calcTotals, monthLabel, formatINR } from '@/lib/utils'
 import { CATEGORY_COLORS } from '@/lib/constants'

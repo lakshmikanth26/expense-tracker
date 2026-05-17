@@ -1,6 +1,6 @@
 # FamilyLedger
 
-A family finance tracker that stores all data in a GitHub repository as JSON files. No database required. Deploy on Vercel for free.
+A family finance tracker that stores all data as local JSON files. No database or external services required. Deploy anywhere for free.
 
 ## Features
 
@@ -14,22 +14,11 @@ A family finance tracker that stores all data in a GitHub repository as JSON fil
 - 🎯 Financial goals with progress tracking
 - 📋 Budget planner with over-budget alerts
 - 📱 Mobile-first dark mode UI
-- 🔄 Data synced to GitHub as JSON files
+- 💾 Local data storage with backup/restore
 
 ## Setup
 
-### 1. Create a GitHub Repository
-
-Create a new **empty** private repository on GitHub (e.g., `family-ledger-data`).
-
-### 2. Create a Personal Access Token
-
-1. Go to [github.com/settings/tokens](https://github.com/settings/tokens)
-2. Click "Generate new token (classic)"
-3. Select the `repo` scope
-4. Copy the token
-
-### 3. Install & Run
+### 1. Install & Run
 
 ```bash
 npm install
@@ -38,29 +27,47 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000)
 
-### 4. Configure in the App
+### 2. Start Using
 
-1. Go to **Settings** in the app
-2. Enter your GitHub token, username, and repository name
-3. Click **Test Connection** to verify
-4. Click **Save**
+1. Begin adding your income and expenses
+2. Data is automatically saved to your browser's local storage
+3. Use the **Settings** page to download backups or restore data
 
-### 5. Deploy to Vercel
+### 3. Deploy to Vercel (Optional)
 
 ```bash
 npx vercel
 ```
 
-Or connect your GitHub repo to [vercel.com](https://vercel.com) for automatic deploys.
+Or connect your repo to [vercel.com](https://vercel.com) for automatic deploys.
 
-> Note: Each user needs to configure their own GitHub token in Settings. Tokens are stored in browser localStorage and never sent to any server.
+## Data Management
+
+- **Automatic**: Data is saved to browser localStorage
+- **Backup**: Download JSON files from Settings page
+- **Restore**: Upload JSON files to restore data
+- **Persistent**: Store JSON files in `public/data/` for deployment persistence
 
 ## Data Structure
 
-Data is stored as monthly JSON files in your GitHub repo:
-- `/data/2025-01.json` — January 2025 data
-- `/data/2025-02.json` — February 2025 data
-- `/data/manifest.json` — list of all months with data
+Data is stored as monthly JSON files:
+- `public/data/2026-05.json` — May 2026 data
+- `public/data/manifest.json` — list of all months with data
+
+Each month file contains:
+```json
+{
+  "month": "2026-05",
+  "income": [],
+  "expenses": [],
+  "investments": [],
+  "savings": [],
+  "loans": [],
+  "subscriptions": [],
+  "goals": [],
+  "budgets": {}
+}
+```
 
 ## Tech Stack
 
@@ -68,4 +75,4 @@ Data is stored as monthly JSON files in your GitHub repo:
 - **Tailwind CSS** — Styling (dark mode)
 - **Recharts** — Charts
 - **Zustand** — State management
-- **GitHub Contents API** — Data storage
+- **Local Storage** — Data persistence
