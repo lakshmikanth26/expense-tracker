@@ -1,4 +1,4 @@
-import { MonthData, ExpenseEntry, IncomeEntry } from './types'
+import { MonthData, ExpenseEntry, IncomeEntry, InvestmentEntry, SavingEntry, LoanEntry, SubscriptionEntry, GoalEntry } from './types'
 import { emptyMonthData } from './utils'
 import { syncExpenseToSheet, syncIncomeToSheet, isGoogleSheetsSyncEnabled } from './google-sheets'
 
@@ -186,4 +186,100 @@ export function downloadAllData(): void {
   link.click()
   
   URL.revokeObjectURL(url)
+}
+
+// Delete functions for different entry types
+export async function deleteExpense(month: string, expenseId: string): Promise<boolean> {
+  try {
+    const data = await getMonthData(month)
+    data.expenses = data.expenses.filter(expense => expense.id !== expenseId)
+    return await saveMonthData(month, data)
+  } catch (error) {
+    console.error(`Failed to delete expense ${expenseId}:`, error)
+    return false
+  }
+}
+
+export async function deleteIncome(month: string, incomeId: string): Promise<boolean> {
+  try {
+    const data = await getMonthData(month)
+    data.income = data.income.filter(income => income.id !== incomeId)
+    return await saveMonthData(month, data)
+  } catch (error) {
+    console.error(`Failed to delete income ${incomeId}:`, error)
+    return false
+  }
+}
+
+export async function deleteInvestment(month: string, investmentId: string): Promise<boolean> {
+  try {
+    const data = await getMonthData(month)
+    data.investments = data.investments.filter(investment => investment.id !== investmentId)
+    return await saveMonthData(month, data)
+  } catch (error) {
+    console.error(`Failed to delete investment ${investmentId}:`, error)
+    return false
+  }
+}
+
+export async function deleteSaving(month: string, savingId: string): Promise<boolean> {
+  try {
+    const data = await getMonthData(month)
+    data.savings = data.savings.filter(saving => saving.id !== savingId)
+    return await saveMonthData(month, data)
+  } catch (error) {
+    console.error(`Failed to delete saving ${savingId}:`, error)
+    return false
+  }
+}
+
+export async function deleteLoan(month: string, loanId: string): Promise<boolean> {
+  try {
+    const data = await getMonthData(month)
+    data.loans = data.loans.filter(loan => loan.id !== loanId)
+    return await saveMonthData(month, data)
+  } catch (error) {
+    console.error(`Failed to delete loan ${loanId}:`, error)
+    return false
+  }
+}
+
+export async function deleteSubscription(subscriptionId: string): Promise<boolean> {
+  try {
+    // Subscriptions are stored differently, need to find which month contains it
+    const months = await getAvailableMonths()
+    for (const month of months) {
+      const data = await getMonthData(month)
+      const originalLength = data.subscriptions.length
+      data.subscriptions = data.subscriptions.filter(sub => sub.id !== subscriptionId)
+      if (data.subscriptions.length < originalLength) {
+        await saveMonthData(month, data)
+        return true
+      }
+    }
+    return false
+  } catch (error) {
+    console.error(`Failed to delete subscription ${subscriptionId}:`, error)
+    return false
+  }
+}
+
+export async function deleteGoal(goalId: string): Promise<boolean> {
+  try {
+    // Goals are stored differently, need to find which month contains it
+    const months = await getAvailableMonths()
+    for (const month of months) {
+      const data = await getMonthData(month)
+      const originalLength = data.goals.length
+      data.goals = data.goals.filter(goal => goal.id !== goalId)
+      if (data.goals.length < originalLength) {
+        await saveMonthData(month, data)
+        return true
+      }
+    }
+    return false
+  } catch (error) {
+    console.error(`Failed to delete goal ${goalId}:`, error)
+    return false
+  }
 }
