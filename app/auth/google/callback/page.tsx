@@ -10,23 +10,29 @@ export default function GoogleCallback() {
 
   useEffect(() => {
     const handleCallback = async () => {
+      console.log('🔄 [DEBUG] OAuth callback started')
       const urlParams = new URLSearchParams(window.location.search)
       const code = urlParams.get('code')
       const error = urlParams.get('error')
 
+      console.log('📋 [DEBUG] URL params:', { code: !!code, error })
+
       if (error) {
-        setStatus('Authentication failed')
+        console.error('❌ [DEBUG] OAuth error:', error)
+        setStatus('Authentication failed: ' + error)
         setTimeout(() => router.push('/settings'), 3000)
         return
       }
 
       if (!code) {
+        console.error('❌ [DEBUG] No authorization code received')
         setStatus('No authorization code received')
         setTimeout(() => router.push('/settings'), 3000)
         return
       }
 
       try {
+        console.log('🔄 [DEBUG] Exchanging code for tokens...')
         // Exchange code for tokens
         const response = await fetch('/api/auth/google/token', {
           method: 'POST',
@@ -34,24 +40,35 @@ export default function GoogleCallback() {
           body: JSON.stringify({ code })
         })
 
+        console.log('📊 [DEBUG] Token exchange response status:', response.status)
+
         if (response.ok) {
-          const { access_token, refresh_token, expires_in } = await response.json()
+          const tokenData = await response.json()
+          console.log('✅ [DEBUG] Token exchange successful:', {
+            hasAccessToken: !!tokenData.access_token,
+            hasRefreshToken: !!tokenData.refresh_token,
+            expiresIn: tokenData.expires_in
+          })
           
           // Save tokens
           saveGoogleSheetsConfig({
-            accessToken: access_token,
-            refreshToken: refresh_token,
-            expiresAt: Date.now() + (expires_in * 1000)
+            accessToken: tokenData.access_token,
+            refreshToken: tokenData.refresh_token || '',
+            expiresAt: Date.now() + (tokenData.expires_in * 1000)
           })
 
+          console.log('💾 [DEBUG] Tokens saved to localStorage')
           setStatus('Authentication successful! Redirecting...')
           setTimeout(() => router.push('/settings'), 2000)
         } else {
-          setStatus('Token exchange failed')
+          const errorText = await response.text()
+          console.error('❌ [DEBUG] Token exchange failed:', response.status, errorText)
+          setStatus('Token exchange failed: ' + response.status)
           setTimeout(() => router.push('/settings'), 3000)
         }
       } catch (error) {
-        setStatus('Authentication error')
+        console.error('❌ [DEBUG] Authentication error:', error)
+        setStatus('Authentication error: ' + (error as Error).message)
         setTimeout(() => router.push('/settings'), 3000)
       }
     }

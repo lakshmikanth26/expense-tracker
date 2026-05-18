@@ -12,22 +12,58 @@ export interface GoogleSheetsConfig {
 }
 
 export function getGoogleSheetsConfig(): GoogleSheetsConfig | null {
-  if (typeof window === 'undefined') return null
+  console.log('🔍 [DEBUG] getGoogleSheetsConfig called')
+  
+  if (typeof window === 'undefined') {
+    console.log('❌ [DEBUG] Window is undefined (SSR)')
+    return null
+  }
   
   const accessToken = localStorage.getItem('gs_access_token') || ''
   const refreshToken = localStorage.getItem('gs_refresh_token') || ''
   const spreadsheetId = localStorage.getItem('gs_spreadsheet_id') || ''
   const expiresAt = parseInt(localStorage.getItem('gs_expires_at') || '0')
   
-  if (!accessToken || !spreadsheetId) return null
+  console.log('📊 [DEBUG] Retrieved from localStorage:', {
+    hasAccessToken: !!accessToken,
+    hasRefreshToken: !!refreshToken,
+    hasSpreadsheetId: !!spreadsheetId,
+    expiresAt: new Date(expiresAt).toISOString()
+  })
+  
+  if (!accessToken || !spreadsheetId) {
+    console.log('❌ [DEBUG] Missing required tokens or spreadsheet ID')
+    return null
+  }
+  
+  console.log('✅ [DEBUG] Config found and valid')
   return { accessToken, refreshToken, spreadsheetId, expiresAt }
 }
 
 export function saveGoogleSheetsConfig(config: Partial<GoogleSheetsConfig>): void {
-  if (config.accessToken) localStorage.setItem('gs_access_token', config.accessToken)
-  if (config.refreshToken) localStorage.setItem('gs_refresh_token', config.refreshToken)
-  if (config.spreadsheetId) localStorage.setItem('gs_spreadsheet_id', config.spreadsheetId)
-  if (config.expiresAt) localStorage.setItem('gs_expires_at', config.expiresAt.toString())
+  console.log('💾 [DEBUG] saveGoogleSheetsConfig called with:', {
+    hasAccessToken: !!config.accessToken,
+    hasRefreshToken: !!config.refreshToken,
+    hasSpreadsheetId: !!config.spreadsheetId,
+    expiresAt: config.expiresAt ? new Date(config.expiresAt).toISOString() : 'none'
+  })
+  
+  if (config.accessToken) {
+    localStorage.setItem('gs_access_token', config.accessToken)
+    console.log('✅ [DEBUG] Access token saved')
+  }
+  if (config.refreshToken) {
+    localStorage.setItem('gs_refresh_token', config.refreshToken)
+    console.log('✅ [DEBUG] Refresh token saved')
+  }
+  if (config.spreadsheetId) {
+    localStorage.setItem('gs_spreadsheet_id', config.spreadsheetId)
+    console.log('✅ [DEBUG] Spreadsheet ID saved:', config.spreadsheetId)
+  }
+  if (config.expiresAt) {
+    localStorage.setItem('gs_expires_at', config.expiresAt.toString())
+    console.log('✅ [DEBUG] Expires at saved:', new Date(config.expiresAt).toISOString())
+  }
 }
 
 export function isGoogleSheetsSyncEnabled(): boolean {

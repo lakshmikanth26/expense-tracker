@@ -30,11 +30,20 @@ export default function GoogleSheetsSync() {
   }, [])
 
   const checkConnection = () => {
+    console.log('🔄 [DEBUG] checkConnection called')
     const config = getGoogleSheetsConfig()
-    setIsConnected(!!config?.accessToken)
+    console.log('📊 [DEBUG] checkConnection config:', config)
+    
+    const isConnected = !!config?.accessToken
+    console.log('🔗 [DEBUG] isConnected:', isConnected)
+    setIsConnected(isConnected)
+    
     if (config?.spreadsheetId) {
+      console.log('📄 [DEBUG] Setting spreadsheet info:', config.spreadsheetId)
       setSpreadsheetId(config.spreadsheetId)
       setSpreadsheetUrl(`https://docs.google.com/spreadsheets/d/${config.spreadsheetId}`)
+    } else {
+      console.log('❌ [DEBUG] No spreadsheet ID found')
     }
   }
 
