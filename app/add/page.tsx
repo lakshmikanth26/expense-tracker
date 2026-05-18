@@ -5,6 +5,7 @@ import { EXPENSE_CATEGORIES, PAYMENT_MODES, INCOME_SOURCES, INVESTMENT_TYPES, SA
 import { toast } from '@/components/ui/Toaster'
 import { v4 as uuid } from 'uuid'
 import { getCurrentMonth } from '@/lib/utils'
+import { isGoogleSheetsSyncEnabled } from '@/lib/google-sheets'
 
 const TABS = ['Expense', 'Income', 'Investment', 'Saving', 'Loan', 'Subscription'] as const
 type Tab = typeof TABS[number]
@@ -15,7 +16,15 @@ function today() {
 
 export default function AddPage() {
   const [tab, setTab] = useState<Tab>('Expense')
+  const [syncEnabled, setSyncEnabled] = useState(false)
   const { monthData, saveMonth, members, currentMonth } = useStore()
+
+  // Check sync status
+  useState(() => {
+    if (typeof window !== 'undefined') {
+      setSyncEnabled(isGoogleSheetsSyncEnabled())
+    }
+  })
 
   const handleSave = async (entry: Record<string, unknown>, type: Tab) => {
     const data = { ...monthData }
@@ -30,8 +39,12 @@ export default function AddPage() {
     else if (type === 'Subscription') data.subscriptions = [...data.subscriptions, entry as never]
 
     const ok = await saveMonth(data)
-    if (ok) toast(`${type} added successfully!`, 'success')
-    else toast('Failed to save data', 'error')
+    if (ok) {
+      const syncMessage = syncEnabled ? ' (synced to Google Sheets)' : ''
+      toast(`${type} added successfully!${syncMessage}`, 'success')
+    } else {
+      toast('Failed to save data', 'error')
+    }
   }
 
   return (

@@ -1,5 +1,6 @@
-import { MonthData } from './types'
+import { MonthData, ExpenseEntry, IncomeEntry } from './types'
 import { emptyMonthData } from './utils'
+import { syncExpenseToSheet, syncIncomeToSheet, isGoogleSheetsSyncEnabled } from './google-sheets'
 
 /**
  * Local data management for expense tracker
@@ -43,9 +44,46 @@ export async function getMonthData(month: string): Promise<MonthData> {
 export async function saveMonthData(month: string, data: MonthData): Promise<boolean> {
   try {
     if (typeof window !== 'undefined') {
+      // Get previous data to compare
       const dataKey = `expense_data_${month}`
+      const previousDataStr = localStorage.getItem(dataKey)
+      const previousData: MonthData = previousDataStr ? JSON.parse(previousDataStr) : emptyMonthData(month)
+      
+      // Save to localStorage first
       localStorage.setItem(dataKey, JSON.stringify(data, null, 2))
       console.log(`Data saved locally for ${month}`)
+
+      // Sync new entries to Google Sheets if enabled
+      if (isGoogleSheetsSyncEnabled()) {
+        try {
+          // Find new expenses (compare with previous data)
+          const newExpenses = data.expenses.filter(expense => 
+            !previousData.expenses.some(prev => prev.id === expense.id)
+          )
+          
+          // Find new income (compare with previous data)
+          const newIncome = data.income.filter(income => 
+            !previousData.income.some(prev => prev.id === income.id)
+          )
+
+          // Sync new entries
+          for (const expense of newExpenses) {
+            await syncExpenseToSheet(expense)
+          }
+          
+          for (const income of newIncome) {
+            await syncIncomeToSheet(income)
+          }
+
+          if (newExpenses.length > 0 || newIncome.length > 0) {
+            console.log(`Synced ${newExpenses.length} expenses and ${newIncome.length} income entries to Google Sheets`)
+          }
+        } catch (syncError) {
+          console.warn(`Google Sheets sync error for ${month}:`, syncError)
+          // Still return true since local save succeeded
+        }
+      }
+
       return true
     }
     return false

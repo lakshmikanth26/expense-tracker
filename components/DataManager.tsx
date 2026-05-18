@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { downloadMonthData, uploadMonthData, downloadAllData } from '@/lib/data'
 import { useStore } from '@/lib/store'
 import { MonthData } from '@/lib/types'
+import GoogleSheetsSync from './GoogleSheetsSync'
 
 export default function DataManager() {
   const [uploading, setUploading] = useState(false)
@@ -32,12 +33,15 @@ export default function DataManager() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
+      {/* Google Sheets Sync */}
+      <GoogleSheetsSync />
+
+      {/* Local Data Management */}
       <div>
-        <h3 className="text-lg font-semibold mb-4">Data Management</h3>
+        <h3 className="text-lg font-semibold mb-4">📱 Local Data Management</h3>
         <p className="text-sm text-gray-600 mb-4">
-          Your expense data is stored locally in your browser and as downloadable JSON files. 
-          Use the options below to backup and restore your data.
+          Your expense data is stored locally in your browser. Use the options below to backup and restore your data manually.
         </p>
       </div>
 
