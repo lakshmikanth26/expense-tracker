@@ -1,0 +1,31 @@
+app/auth/google/callback/page.tsx
+  1e31434caf664106 13,18-19,21-22,28,35,43-44,46-51,55-57,60,64-66,70-71
+lib/google-sheets.ts
+  1e31434caf664106 15,17-20,27-37,39,44-66
+components/GoogleSheetsSync.tsx
+  1e31434caf664106 33,35-40,42,45-46
+app/api/auth/google/token/route.ts
+  1e31434caf664106 4-5,8,11,19-24,26
+app/api/debug/env/route.ts
+  1e31434caf664106 1-17
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.23",
+  "base_commit_sha": "783d280e80291603c2ff1ad8b7ec2977e158755a",
+  "prompts": {
+    "1e31434caf664106": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "63988280-bc5c-4f41-bdbe-02c7cf1105ae",
+        "model": "claude-4-sonnet"
+      },
+      "human_author": "Lakshmikanth <lakshmikanth.d@gdn-commerce.com>",
+      "messages": [],
+      "total_additions": 104,
+      "total_deletions": 14,
+      "accepted_lines": 104,
+      "overriden_lines": 0
+    }
+  }
+}
