@@ -10,7 +10,8 @@ import {
   isGoogleSheetsSyncEnabled,
   setGoogleSheetsSyncEnabled,
   pullDataFromSheets,
-  setupExistingSpreadsheet
+  setupExistingSpreadsheet,
+  findExistingExpenseTracker
 } from '@/lib/google-sheets'
 import { CheckCircle, XCircle, Download, RefreshCw, ExternalLink, Settings } from 'lucide-react'
 
@@ -91,6 +92,25 @@ export default function GoogleSheetsSync() {
       alert('Spreadsheet connected and setup completed! Ready to sync.')
     } catch (error) {
       alert(`Error connecting spreadsheet: ${error instanceof Error ? error.message : 'Unknown error'}`)
+    }
+  }
+
+  const handleFindExisting = async () => {
+    setCreating(true)
+    try {
+      const findResult = await findExistingExpenseTracker()
+      if (findResult.ok && findResult.spreadsheetId) {
+        saveGoogleSheetsConfig({ spreadsheetId: findResult.spreadsheetId })
+        setSpreadsheetId(findResult.spreadsheetId)
+        setSpreadsheetUrl(`https://docs.google.com/spreadsheets/d/${findResult.spreadsheetId}`)
+        alert(`Found and connected to existing tracker! ${findResult.message}`)
+      } else {
+        alert(`No existing tracker found. ${findResult.message}`)
+      }
+    } catch (error) {
+      alert(`Error searching for tracker: ${error instanceof Error ? error.message : 'Unknown error'}`)
+    } finally {
+      setCreating(false)
     }
   }
 
@@ -181,10 +201,25 @@ export default function GoogleSheetsSync() {
               </div>
 
               <div className="border-t pt-4">
-                {/* Option 2: Use existing */}
-                <h5 className="text-sm font-medium mb-2">Option 2: Use Existing Spreadsheet</h5>
+                {/* Option 2: Find existing */}
+                <h5 className="text-sm font-medium mb-2">Option 2: Find Existing Expense Tracker</h5>
                 <p className="text-sm text-gray-600 mb-3">
-                  Connect to an existing Google Sheets document by providing its ID or URL.
+                  Search your Google Drive for existing "Family Expense Tracker" spreadsheets.
+                </p>
+                <button
+                  onClick={handleFindExisting}
+                  disabled={creating}
+                  className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-colors text-sm disabled:opacity-50"
+                >
+                  {creating ? 'Searching...' : '🔍 Find Existing Tracker'}
+                </button>
+              </div>
+
+              <div className="border-t pt-4">
+                {/* Option 3: Use existing by URL */}
+                <h5 className="text-sm font-medium mb-2">Option 3: Connect by URL/ID</h5>
+                <p className="text-sm text-gray-600 mb-3">
+                  Connect to any existing Google Sheets document by providing its ID or URL.
                 </p>
                 <div className="flex gap-2">
                   <input

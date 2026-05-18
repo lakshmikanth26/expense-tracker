@@ -2,7 +2,7 @@ import { MonthData, ExpenseEntry, IncomeEntry } from './types'
 
 // Google Sheets API configuration
 const SHEETS_API_BASE = 'https://sheets.googleapis.com/v4/spreadsheets'
-const OAUTH2_SCOPE = 'https://www.googleapis.com/auth/spreadsheets'
+const OAUTH2_SCOPE = 'https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/drive.readonly'
 
 export interface GoogleSheetsConfig {
   accessToken: string
@@ -512,5 +512,67 @@ export async function setupExistingSpreadsheet(spreadsheetId: string): Promise<{
     return { ok: true, message: 'Spreadsheet setup completed successfully' }
   } catch (error) {
     return { ok: false, message: `Setup failed: ${error instanceof Error ? error.message : 'Unknown error'}` }
+  }
+}
+
+// Find existing Family Expense Tracker spreadsheets in Google Drive
+export async function findExistingExpenseTracker(): Promise<{ ok: boolean; spreadsheetId?: string; message: string }> {
+  const config = getGoogleSheetsConfig()
+  if (!config) {
+    return { ok: false, message: 'Not authenticated with Google' }
+  }
+
+  try {
+    // Search for spreadsheets with the title "Family Expense Tracker"
+    const response = await fetch(
+      `https://www.googleapis.com/drive/v3/files?q=name%3D%27Family%20Expense%20Tracker%27%20and%20mimeType%3D%27application%2Fvnd.google-apps.spreadsheet%27&fields=files(id%2Cname)`,
+      {
+        headers: {
+          'Authorization': `Bearer ${config.accessToken}`
+        }
+      }
+    )
+
+    if (!response.ok) {
+      return { ok: false, message: 'Failed to search Google Drive' }
+    }
+
+    const data = await response.json()
+    const files = data.files || []
+
+    if (files.length > 0) {
+      const spreadsheetId = files[0].id
+      console.log('🔍 [DEBUG] Found existing expense tracker:', spreadsheetId)
+      return { 
+        ok: true, 
+        spreadsheetId, 
+        message: `Found existing expense tracker: ${files[0].name}` 
+      }
+    } else {
+      return { 
+        ok: false, 
+        message: 'No existing Family Expense Tracker found' 
+      }
+    }
+  } catch (error) {
+    return { 
+      ok: false, 
+      message: `Search failed: ${error instanceof Error ? error.message : 'Unknown error'}` 
+    }
+  }
+}
+
+// Auto-connect to existing expense tracker after authentication
+export async function autoConnectExistingTracker(): Promise<{ ok: boolean; message: string }> {
+  console.log('🔍 [DEBUG] Searching for existing expense tracker...')
+  const findResult = await findExistingExpenseTracker()
+  
+  if (findResult.ok && findResult.spreadsheetId) {
+    console.log('✅ [DEBUG] Auto-connecting to existing tracker:', findResult.spreadsheetId)
+    saveGoogleSheetsConfig({ spreadsheetId: findResult.spreadsheetId })
+    return { ok: true, message: `Auto-connected to existing tracker: ${findResult.message}` }
+  } else {
+    console.log('❌ [DEBUG] No existing tracker found')
+    return { ok: false, message: findResult.message }
   }
 }

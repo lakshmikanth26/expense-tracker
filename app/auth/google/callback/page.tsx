@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { saveGoogleSheetsConfig } from '@/lib/google-sheets'
+import { saveGoogleSheetsConfig, autoConnectExistingTracker } from '@/lib/google-sheets'
 
 export default function GoogleCallback() {
   const [status, setStatus] = useState('Processing...')
@@ -58,7 +58,19 @@ export default function GoogleCallback() {
           })
 
           console.log('💾 [DEBUG] Tokens saved to localStorage')
-          setStatus('Authentication successful! Redirecting...')
+          
+          // Try to auto-connect to existing expense tracker
+          setStatus('Searching for existing expense tracker...')
+          const autoConnectResult = await autoConnectExistingTracker()
+          
+          if (autoConnectResult.ok) {
+            console.log('✅ [DEBUG] Auto-connected to existing tracker')
+            setStatus('Connected to existing expense tracker! Redirecting...')
+          } else {
+            console.log('ℹ️ [DEBUG] No existing tracker found, user will need to create/connect one')
+            setStatus('Authentication successful! Redirecting...')
+          }
+          
           setTimeout(() => router.push('/settings'), 2000)
         } else {
           const errorText = await response.text()
