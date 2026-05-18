@@ -31,13 +31,19 @@ export function getGoogleSheetsConfig(): GoogleSheetsConfig | null {
     expiresAt: new Date(expiresAt).toISOString()
   })
   
-  if (!accessToken || !spreadsheetId) {
-    console.log('❌ [DEBUG] Missing required tokens or spreadsheet ID')
+  if (!accessToken) {
+    console.log('❌ [DEBUG] Missing access token')
     return null
   }
   
   console.log('✅ [DEBUG] Config found and valid')
   return { accessToken, refreshToken, spreadsheetId, expiresAt }
+}
+
+// Check if we have a complete configuration for sync operations
+export function hasCompleteGoogleSheetsConfig(): boolean {
+  const config = getGoogleSheetsConfig()
+  return !!(config?.accessToken && config?.spreadsheetId)
 }
 
 export function saveGoogleSheetsConfig(config: Partial<GoogleSheetsConfig>): void {
@@ -259,7 +265,7 @@ async function initializeSpreadsheet(spreadsheetId: string, accessToken: string)
 // Sync expense to Google Sheets
 export async function syncExpenseToSheet(expense: ExpenseEntry): Promise<{ ok: boolean; message: string }> {
   const config = getGoogleSheetsConfig()
-  if (!config || !isGoogleSheetsSyncEnabled()) {
+  if (!config || !config.spreadsheetId || !isGoogleSheetsSyncEnabled()) {
     return { ok: false, message: 'Google Sheets not configured or disabled' }
   }
 
@@ -311,7 +317,7 @@ export async function syncExpenseToSheet(expense: ExpenseEntry): Promise<{ ok: b
 // Sync income to Google Sheets
 export async function syncIncomeToSheet(income: IncomeEntry): Promise<{ ok: boolean; message: string }> {
   const config = getGoogleSheetsConfig()
-  if (!config || !isGoogleSheetsSyncEnabled()) {
+  if (!config || !config.spreadsheetId || !isGoogleSheetsSyncEnabled()) {
     return { ok: false, message: 'Google Sheets not configured or disabled' }
   }
 
@@ -360,7 +366,7 @@ export async function syncIncomeToSheet(income: IncomeEntry): Promise<{ ok: bool
 // Pull all data from Google Sheets
 export async function pullDataFromSheets(): Promise<{ ok: boolean; message: string; data?: Record<string, MonthData> }> {
   const config = getGoogleSheetsConfig()
-  if (!config) {
+  if (!config || !config.spreadsheetId) {
     return { ok: false, message: 'Google Sheets not configured' }
   }
 
@@ -469,7 +475,7 @@ export async function pullDataFromSheets(): Promise<{ ok: boolean; message: stri
 // Test connection
 export async function testSheetsConnection(): Promise<{ ok: boolean; message: string }> {
   const config = getGoogleSheetsConfig()
-  if (!config) {
+  if (!config || !config.spreadsheetId) {
     return { ok: false, message: 'Not configured' }
   }
 
@@ -491,5 +497,20 @@ export async function testSheetsConnection(): Promise<{ ok: boolean; message: st
     }
   } catch (error) {
     return { ok: false, message: 'Network error' }
+  }
+}
+
+// Setup headers and structure for an existing spreadsheet
+export async function setupExistingSpreadsheet(spreadsheetId: string): Promise<{ ok: boolean; message: string }> {
+  const config = getGoogleSheetsConfig()
+  if (!config) {
+    return { ok: false, message: 'Not authenticated with Google' }
+  }
+
+  try {
+    await initializeSpreadsheet(spreadsheetId, config.accessToken)
+    return { ok: true, message: 'Spreadsheet setup completed successfully' }
+  } catch (error) {
+    return { ok: false, message: `Setup failed: ${error instanceof Error ? error.message : 'Unknown error'}` }
   }
 }

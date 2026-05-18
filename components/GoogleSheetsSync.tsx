@@ -9,7 +9,8 @@ import {
   testSheetsConnection,
   isGoogleSheetsSyncEnabled,
   setGoogleSheetsSyncEnabled,
-  pullDataFromSheets
+  pullDataFromSheets,
+  setupExistingSpreadsheet
 } from '@/lib/google-sheets'
 import { CheckCircle, XCircle, Download, RefreshCw, ExternalLink, Settings } from 'lucide-react'
 
@@ -64,7 +65,7 @@ export default function GoogleSheetsSync() {
     setCreating(false)
   }
 
-  const handleManualConnect = () => {
+  const handleManualConnect = async () => {
     if (!manualId.trim()) {
       alert('Please enter a spreadsheet ID')
       return
@@ -75,11 +76,22 @@ export default function GoogleSheetsSync() {
       manualId.match(/\/spreadsheets\/d\/([a-zA-Z0-9-_]+)/)?.[1] || manualId :
       manualId
 
-    saveGoogleSheetsConfig({ spreadsheetId: id })
-    setSpreadsheetId(id)
-    setSpreadsheetUrl(`https://docs.google.com/spreadsheets/d/${id}`)
-    setManualId('')
-    alert('Spreadsheet connected! Please test the connection.')
+    try {
+      // Setup headers in the existing spreadsheet
+      const setupResult = await setupExistingSpreadsheet(id)
+      if (!setupResult.ok) {
+        alert(`Failed to setup spreadsheet: ${setupResult.message}`)
+        return
+      }
+
+      saveGoogleSheetsConfig({ spreadsheetId: id })
+      setSpreadsheetId(id)
+      setSpreadsheetUrl(`https://docs.google.com/spreadsheets/d/${id}`)
+      setManualId('')
+      alert('Spreadsheet connected and setup completed! Ready to sync.')
+    } catch (error) {
+      alert(`Error connecting spreadsheet: ${error instanceof Error ? error.message : 'Unknown error'}`)
+    }
   }
 
   const handleTest = async () => {
