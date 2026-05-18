@@ -2,7 +2,7 @@ import { MonthData, ExpenseEntry, IncomeEntry } from './types'
 
 // Google Sheets API configuration
 const SHEETS_API_BASE = 'https://sheets.googleapis.com/v4/spreadsheets'
-const OAUTH2_SCOPE = 'https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/drive.readonly'
+const OAUTH2_SCOPE = 'https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/drive https://www.googleapis.com/auth/userinfo.email'
 
 export interface GoogleSheetsConfig {
   accessToken: string
@@ -99,8 +99,8 @@ export function initiateGoogleAuth(): void {
   window.location.href = authUrl.toString()
 }
 
-// Create spreadsheet with proper structure
-export async function createExpenseTracker(): Promise<string> {
+// Create spreadsheet with proper structure and auto-sharing
+export async function createExpenseTracker(shareWithEmails?: string[]): Promise<string> {
   const config = getGoogleSheetsConfig()
   if (!config) throw new Error('Not authenticated with Google')
 
@@ -146,6 +146,17 @@ export async function createExpenseTracker(): Promise<string> {
 
   // Initialize headers and formulas
   await initializeSpreadsheet(spreadsheetId, config.accessToken)
+  
+  // Auto-share with family members if emails provided
+  if (shareWithEmails && shareWithEmails.length > 0) {
+    try {
+      await shareSpreadsheet(spreadsheetId, shareWithEmails)
+      console.log('✅ [DEBUG] Spreadsheet shared with family members')
+    } catch (error) {
+      console.warn('⚠️ [DEBUG] Failed to share spreadsheet:', error)
+      // Don't fail the creation if sharing fails
+    }
+  }
   
   // Save spreadsheet ID
   saveGoogleSheetsConfig({ spreadsheetId })
@@ -515,7 +526,7 @@ export async function setupExistingSpreadsheet(spreadsheetId: string): Promise<{
   }
 }
 
-// Find existing Family Expense Tracker spreadsheets in Google Drive
+// Find existing Family Expense Tracker spreadsheets (owned by user OR shared with user)
 export async function findExistingExpenseTracker(): Promise<{ ok: boolean; spreadsheetId?: string; message: string }> {
   const config = getGoogleSheetsConfig()
   if (!config) {
@@ -523,9 +534,9 @@ export async function findExistingExpenseTracker(): Promise<{ ok: boolean; sprea
   }
 
   try {
-    // Search for spreadsheets with the title "Family Expense Tracker"
+    // Search for spreadsheets with the title "Family Expense Tracker" - both owned and shared
     const response = await fetch(
-      `https://www.googleapis.com/drive/v3/files?q=name%3D%27Family%20Expense%20Tracker%27%20and%20mimeType%3D%27application%2Fvnd.google-apps.spreadsheet%27&fields=files(id%2Cname)`,
+      `https://www.googleapis.com/drive/v3/files?q=name%3D%27Family%20Expense%20Tracker%27%20and%20mimeType%3D%27application%2Fvnd.google-apps.spreadsheet%27&fields=files(id%2Cname%2Cowners%2Cpermissions)`,
       {
         headers: {
           'Authorization': `Bearer ${config.accessToken}`
@@ -542,22 +553,100 @@ export async function findExistingExpenseTracker(): Promise<{ ok: boolean; sprea
 
     if (files.length > 0) {
       const spreadsheetId = files[0].id
-      console.log('🔍 [DEBUG] Found existing expense tracker:', spreadsheetId)
+      const isOwned = files[0].owners?.some((owner: any) => owner.me === true)
+      console.log('🔍 [DEBUG] Found existing expense tracker:', spreadsheetId, 'Owned by me:', isOwned)
       return { 
         ok: true, 
         spreadsheetId, 
-        message: `Found existing expense tracker: ${files[0].name}` 
+        message: `Found existing expense tracker: ${files[0].name} ${isOwned ? '(owned by you)' : '(shared with you)'}` 
       }
     } else {
       return { 
         ok: false, 
-        message: 'No existing Family Expense Tracker found' 
+        message: 'No existing Family Expense Tracker found in owned or shared files' 
       }
     }
   } catch (error) {
     return { 
       ok: false, 
       message: `Search failed: ${error instanceof Error ? error.message : 'Unknown error'}` 
+    }
+  }
+}
+
+// Share spreadsheet with specific email addresses
+export async function shareSpreadsheet(spreadsheetId: string, emails: string[]): Promise<{ ok: boolean; message: string }> {
+  const config = getGoogleSheetsConfig()
+  if (!config) {
+    return { ok: false, message: 'Not authenticated with Google' }
+  }
+
+  try {
+    const sharePromises = emails.map(email => 
+      fetch(`https://www.googleapis.com/drive/v3/files/${spreadsheetId}/permissions`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${config.accessToken}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          role: 'writer', // Give edit access
+          type: 'user',
+          emailAddress: email
+        })
+      })
+    )
+
+    const results = await Promise.all(sharePromises)
+    const failures = results.filter(r => !r.ok)
+    
+    if (failures.length === 0) {
+      return { 
+        ok: true, 
+        message: `Spreadsheet shared successfully with ${emails.join(', ')}` 
+      }
+    } else {
+      return { 
+        ok: false, 
+        message: `Failed to share with ${failures.length}/${emails.length} users` 
+      }
+    }
+  } catch (error) {
+    return { 
+      ok: false, 
+      message: `Share failed: ${error instanceof Error ? error.message : 'Unknown error'}` 
+    }
+  }
+}
+
+// Get current user's email from Google
+export async function getCurrentUserEmail(): Promise<{ ok: boolean; email?: string; message: string }> {
+  const config = getGoogleSheetsConfig()
+  if (!config) {
+    return { ok: false, message: 'Not authenticated with Google' }
+  }
+
+  try {
+    const response = await fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
+      headers: {
+        'Authorization': `Bearer ${config.accessToken}`
+      }
+    })
+
+    if (!response.ok) {
+      return { ok: false, message: 'Failed to get user info' }
+    }
+
+    const userInfo = await response.json()
+    return { 
+      ok: true, 
+      email: userInfo.email, 
+      message: `Current user: ${userInfo.email}` 
+    }
+  } catch (error) {
+    return { 
+      ok: false, 
+      message: `Failed to get user email: ${error instanceof Error ? error.message : 'Unknown error'}` 
     }
   }
 }

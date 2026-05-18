@@ -11,7 +11,9 @@ import {
   setGoogleSheetsSyncEnabled,
   pullDataFromSheets,
   setupExistingSpreadsheet,
-  findExistingExpenseTracker
+  findExistingExpenseTracker,
+  shareSpreadsheet,
+  getCurrentUserEmail
 } from '@/lib/google-sheets'
 import { CheckCircle, XCircle, Download, RefreshCw, ExternalLink, Settings } from 'lucide-react'
 
@@ -25,11 +27,26 @@ export default function GoogleSheetsSync() {
   const [pulling, setPulling] = useState(false)
   const [syncEnabled, setSyncEnabled] = useState(false)
   const [connectionStatus, setConnectionStatus] = useState<{ ok: boolean; message: string } | null>(null)
+  const [shareEmails, setShareEmails] = useState('')
+  const [sharing, setSharing] = useState(false)
+  const [currentUserEmail, setCurrentUserEmail] = useState('')
 
   useEffect(() => {
     checkConnection()
     setSyncEnabled(isGoogleSheetsSyncEnabled())
+    loadCurrentUser()
   }, [])
+
+  const loadCurrentUser = async () => {
+    try {
+      const result = await getCurrentUserEmail()
+      if (result.ok && result.email) {
+        setCurrentUserEmail(result.email)
+      }
+    } catch (error) {
+      console.log('Could not load current user email')
+    }
+  }
 
   const checkConnection = () => {
     console.log('🔄 [DEBUG] checkConnection called')
@@ -56,14 +73,51 @@ export default function GoogleSheetsSync() {
   const handleCreateSheet = async () => {
     setCreating(true)
     try {
-      const newSpreadsheetId = await createExpenseTracker()
+      // Parse family member emails if provided
+      const familyEmails = shareEmails
+        .split(',')
+        .map(email => email.trim())
+        .filter(email => email.length > 0)
+
+      const newSpreadsheetId = await createExpenseTracker(familyEmails)
       setSpreadsheetId(newSpreadsheetId)
       setSpreadsheetUrl(`https://docs.google.com/spreadsheets/d/${newSpreadsheetId}`)
-      alert('Expense tracker spreadsheet created successfully!')
+      
+      const shareMessage = familyEmails.length > 0 
+        ? ` and shared with ${familyEmails.join(', ')}`
+        : ''
+      alert(`Expense tracker spreadsheet created successfully${shareMessage}!`)
     } catch (error) {
       alert(`Failed to create spreadsheet: ${error instanceof Error ? error.message : 'Unknown error'}`)
     }
     setCreating(false)
+  }
+
+  const handleShareSpreadsheet = async () => {
+    if (!spreadsheetId || !shareEmails.trim()) {
+      alert('Please enter email addresses to share with')
+      return
+    }
+
+    setSharing(true)
+    try {
+      const emails = shareEmails
+        .split(',')
+        .map(email => email.trim())
+        .filter(email => email.length > 0)
+
+      const result = await shareSpreadsheet(spreadsheetId, emails)
+      if (result.ok) {
+        alert(result.message)
+        setShareEmails('')
+      } else {
+        alert(`Sharing failed: ${result.message}`)
+      }
+    } catch (error) {
+      alert(`Error sharing spreadsheet: ${error instanceof Error ? error.message : 'Unknown error'}`)
+    } finally {
+      setSharing(false)
+    }
   }
 
   const handleManualConnect = async () => {
@@ -181,6 +235,24 @@ export default function GoogleSheetsSync() {
       ) : !spreadsheetId ? (
         /* Step 2: Create or Connect Spreadsheet */
         <div className="space-y-4">
+          {/* Family member emails input */}
+          <div className="p-4 border rounded-lg bg-blue-50">
+            <h4 className="font-medium mb-2 text-blue-800">👨‍👩‍👧‍👦 Family Members</h4>
+            <p className="text-xs text-blue-600 mb-3">
+              Optional: Enter family member email addresses to automatically share the spreadsheet with them.
+            </p>
+            <input
+              type="text"
+              placeholder="email1@gmail.com, email2@gmail.com"
+              value={shareEmails}
+              onChange={(e) => setShareEmails(e.target.value)}
+              className="w-full px-3 py-2 text-sm border border-blue-200 rounded-lg"
+            />
+            {currentUserEmail && (
+              <p className="text-xs text-blue-500 mt-1">Current user: {currentUserEmail}</p>
+            )}
+          </div>
+
           <div className="p-4 border rounded-lg bg-green-50">
             <h4 className="font-medium mb-3 text-green-800">Step 2: Set Up Spreadsheet</h4>
             
@@ -189,14 +261,14 @@ export default function GoogleSheetsSync() {
               <div>
                 <h5 className="text-sm font-medium mb-2">Option 1: Create New Spreadsheet</h5>
                 <p className="text-sm text-gray-600 mb-3">
-                  Create a new spreadsheet with pre-configured structure for expenses and income.
+                  Create a new spreadsheet with pre-configured structure. {shareEmails && 'Will be automatically shared with family members.'}
                 </p>
                 <button
                   onClick={handleCreateSheet}
                   disabled={creating}
                   className="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 transition-colors text-sm disabled:opacity-50"
                 >
-                  {creating ? 'Creating...' : '📝 Create Expense Tracker Sheet'}
+                  {creating ? 'Creating...' : '📝 Create & Share Expense Tracker'}
                 </button>
               </div>
 
@@ -281,6 +353,33 @@ export default function GoogleSheetsSync() {
                 {connectionStatus.ok ? <CheckCircle size={16} /> : <XCircle size={16} />}
                 {connectionStatus.message}
               </div>
+            )}
+          </div>
+
+          {/* Share Spreadsheet */}
+          <div className="p-4 border rounded-lg bg-blue-50">
+            <h4 className="font-medium mb-2 text-blue-800">👨‍👩‍👧‍👦 Share with Family</h4>
+            <p className="text-xs text-blue-600 mb-3">
+              Share this spreadsheet with family members so they can also add expenses.
+            </p>
+            <div className="flex gap-2">
+              <input
+                type="text"
+                placeholder="email1@gmail.com, email2@gmail.com"
+                value={shareEmails}
+                onChange={(e) => setShareEmails(e.target.value)}
+                className="flex-1 px-3 py-2 text-sm border border-blue-200 rounded-lg"
+              />
+              <button
+                onClick={handleShareSpreadsheet}
+                disabled={sharing || !shareEmails.trim()}
+                className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-colors text-sm disabled:opacity-50"
+              >
+                {sharing ? 'Sharing...' : 'Share'}
+              </button>
+            </div>
+            {currentUserEmail && (
+              <p className="text-xs text-blue-500 mt-2">Logged in as: {currentUserEmail}</p>
             )}
           </div>
 
