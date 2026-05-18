@@ -1,0 +1,25 @@
+components/GoogleSheetsSync.tsx
+  1e31434caf664106 14-16,30-32,37,40-49,76-82,85-89,96-120,238-255,264,271,359-385
+lib/google-sheets.ts
+  1e31434caf664106 5,102-103,150-159,529,537,539,556-557,561,566,577-649
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.23",
+  "base_commit_sha": "d654236f56dd8f8e164b6335596b0a339a1788e9",
+  "prompts": {
+    "1e31434caf664106": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "63988280-bc5c-4f41-bdbe-02c7cf1105ae",
+        "model": "claude-4-sonnet"
+      },
+      "human_author": "Lakshmikanth <lakshmikanth.d@gdn-commerce.com>",
+      "messages": [],
+      "total_additions": 202,
+      "total_deletions": 14,
+      "accepted_lines": 202,
+      "overriden_lines": 0
+    }
+  }
+}
